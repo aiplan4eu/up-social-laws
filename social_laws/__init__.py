@@ -14,5 +14,7 @@
 
 from unified_planning.model.multi_agent import *
 
-VERSION = (0, 0, 1)
-__version__ = ".".join(str(x) for x in VERSION)
+# This is a hack, since getting the (agent, original action) from the solution of the robustness verification compilation is difficult
+name_separator = "__"
+
+__version__="0.0.2"

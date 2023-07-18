@@ -32,6 +32,9 @@ from unified_planning.model.operators import OperatorKind
 from unified_planning.model.expression import Expression
 from unified_planning.exceptions import UPTypeError
 from typing import List, Dict
+from unified_planning.environment import get_environment
+import unified_planning.model.problem_kind
+
 
 credits = Credits('Multi Agent Problem Centralizer',
                   'Technion Cognitive Robotics Lab (cf. https://github.com/TechnionCognitiveRoboticsLab)',
@@ -60,30 +63,7 @@ class MultiAgentProblemCentralizer(engines.engine.Engine, CompilerMixin):
     @staticmethod
     def supported_kind() -> ProblemKind:
         supported_kind = ProblemKind()
-        supported_kind.set_problem_class("ACTION_BASED_MULTI_AGENT")
-        supported_kind.set_typing("FLAT_TYPING")
-        supported_kind.set_typing("HIERARCHICAL_TYPING")
-        supported_kind.set_numbers("CONTINUOUS_NUMBERS")
-        supported_kind.set_numbers("DISCRETE_NUMBERS")
-        supported_kind.set_problem_type("SIMPLE_NUMERIC_PLANNING")
-        supported_kind.set_problem_type("GENERAL_NUMERIC_PLANNING")
-        supported_kind.set_fluents_type("NUMERIC_FLUENTS")
-        supported_kind.set_fluents_type("OBJECT_FLUENTS")
-        supported_kind.set_conditions_kind("NEGATIVE_CONDITIONS")
-        supported_kind.set_conditions_kind("DISJUNCTIVE_CONDITIONS")
-        supported_kind.set_conditions_kind("EQUALITY")
-        supported_kind.set_conditions_kind("EXISTENTIAL_CONDITIONS")
-        supported_kind.set_conditions_kind("UNIVERSAL_CONDITIONS")
-        supported_kind.set_effects_kind("CONDITIONAL_EFFECTS")
-        supported_kind.set_effects_kind("INCREASE_EFFECTS")
-        supported_kind.set_effects_kind("DECREASE_EFFECTS")
-        supported_kind.set_time("CONTINUOUS_TIME")
-        supported_kind.set_time("DISCRETE_TIME")
-        supported_kind.set_time("INTERMEDIATE_CONDITIONS_AND_EFFECTS")
-        supported_kind.set_time("TIMED_EFFECT")
-        supported_kind.set_time("TIMED_GOALS")
-        supported_kind.set_time("DURATION_INEQUALITIES")
-        supported_kind.set_simulated_entities("SIMULATED_EFFECTS")
+        supported_kind = unified_planning.model.problem_kind.multi_agent_kind.union(unified_planning.model.problem_kind.actions_cost_kind).union(unified_planning.model.problem_kind.temporal_kind)                
         return supported_kind
 
     @staticmethod
@@ -127,7 +107,7 @@ class MultiAgentProblemCentralizer(engines.engine.Engine, CompilerMixin):
                 new_problem.set_initial_value(fmap.get_environment_version(fluent), eiv[fluent])
             
 
-        fsub = FluentMapSubstituter(problem, new_problem.env)
+        fsub = FluentMapSubstituter(problem, new_problem.environment)
         for agent in problem.agents:
             for action in agent.actions:
                 d = {}
@@ -165,5 +145,5 @@ class MultiAgentProblemCentralizer(engines.engine.Engine, CompilerMixin):
 
 
 
-env = up.environment.get_env()
+env = get_environment()
 env.factory.add_engine('MultiAgentProblemCentralizer', __name__, 'MultiAgentProblemCentralizer')

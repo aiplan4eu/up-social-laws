@@ -37,10 +37,13 @@ from unified_planning.engines.meta_engine import MetaEngine
 import unified_planning.engines.mixins as mixins
 from unified_planning.engines.mixins.oneshot_planner import OptimalityGuarantee
 from unified_planning.engines.results import *
-from unified_planning.engines.sequential_simulator import SequentialSimulator
+from unified_planning.engines.sequential_simulator import UPSequentialSimulator
 from social_laws.ma_centralizer import MultiAgentProblemCentralizer
 from functools import partial
 from unified_planning.engines.compilers.utils import replace_action
+import unified_planning.model.problem_kind
+import social_laws
+
 
 credits = Credits('Social Law Robustness Checker',
                   'Technion Cognitive Robotics Lab (cf. https://github.com/TechnionCognitiveRoboticsLab)',
@@ -76,12 +79,12 @@ class SocialLawRobustnessChecker(engines.engine.Engine, mixins.OneshotPlannerMix
     '''social law robustness checker class:
     This class checks if a given MultiAgentProblemWithWaitfor is robust or not.
     '''
-    def __init__(self, planner_name : str = None, robustness_verifier_name : str = None, save_pddl = False):
+    def __init__(self, planner_name : str = None, robustness_verifier_name : str = None, save_pddl_prefix = None):
         engines.engine.Engine.__init__(self)
         mixins.OneshotPlannerMixin.__init__(self)
         self._planner_name = planner_name
         self._robustness_verifier_name = robustness_verifier_name
-        self._save_pddl = save_pddl
+        self._save_pddl_prefix = save_pddl_prefix
         
 
     @property
@@ -100,31 +103,7 @@ class SocialLawRobustnessChecker(engines.engine.Engine, mixins.OneshotPlannerMix
 
     @staticmethod
     def supported_kind() -> "ProblemKind":
-        supported_kind = ProblemKind()
-        supported_kind.set_problem_class("ACTION_BASED_MULTI_AGENT")
-        supported_kind.set_typing("FLAT_TYPING")
-        supported_kind.set_typing("HIERARCHICAL_TYPING")
-        supported_kind.set_numbers("CONTINUOUS_NUMBERS")
-        supported_kind.set_numbers("DISCRETE_NUMBERS")
-        supported_kind.set_fluents_type("NUMERIC_FLUENTS")
-        supported_kind.set_fluents_type("OBJECT_FLUENTS")
-        supported_kind.set_conditions_kind("NEGATIVE_CONDITIONS")
-        supported_kind.set_conditions_kind("DISJUNCTIVE_CONDITIONS")
-        supported_kind.set_conditions_kind("EQUALITY")
-        supported_kind.set_conditions_kind("EXISTENTIAL_CONDITIONS")
-        supported_kind.set_conditions_kind("UNIVERSAL_CONDITIONS")
-        supported_kind.set_effects_kind("CONDITIONAL_EFFECTS")
-        supported_kind.set_effects_kind("INCREASE_EFFECTS")
-        supported_kind.set_effects_kind("DECREASE_EFFECTS")
-        supported_kind.set_time("CONTINUOUS_TIME")
-        supported_kind.set_time("DISCRETE_TIME")
-        supported_kind.set_time("INTERMEDIATE_CONDITIONS_AND_EFFECTS")
-        supported_kind.set_time("TIMED_EFFECT")
-        supported_kind.set_time("TIMED_GOALS")
-        supported_kind.set_time("DURATION_INEQUALITIES")
-        supported_kind.set_expression_duration("STATIC_FLUENTS_IN_DURATION")
-        supported_kind.set_expression_duration("FLUENTS_IN_DURATION")
-        supported_kind.set_simulated_entities("SIMULATED_EFFECTS")
+        supported_kind = unified_planning.model.problem_kind.multi_agent_kind.union(unified_planning.model.problem_kind.actions_cost_kind).union(unified_planning.model.problem_kind.temporal_kind)        
         final_supported_kind = supported_kind.intersection(SingleAgentProjection.supported_kind())
         
         return final_supported_kind
@@ -142,10 +121,10 @@ class SocialLawRobustnessChecker(engines.engine.Engine, mixins.OneshotPlannerMix
             sap = SingleAgentProjection(agent)        
             result = sap.compile(problem)
 
-            if self._save_pddl:
+            if self._save_pddl_prefix is not None:
                 w = PDDLWriter(result.problem)
-                w.write_domain("sap__" + agent.name + "__domain.pddl")
-                w.write_problem("sap__" + agent.name + "__problem.pddl")            
+                w.write_domain(unified_planning.social_law.name_separator.join([self._save_pddl_prefix, "sap",  agent.name,  "domain.pddl"]))
+                w.write_problem(unified_planning.social_law.name_separator.join([self._save_pddl_prefix, "sap",  agent.name,  "problem.pddl"]))
 
             with OneshotPlanner(name=self._planner_name, problem_kind=result.problem.kind) as planner:
                 presult = planner.solve(result.problem)
@@ -160,16 +139,16 @@ class SocialLawRobustnessChecker(engines.engine.Engine, mixins.OneshotPlannerMix
             compilation_kind=CompilationKind.MA_SL_ROBUSTNESS_VERIFICATION)
         rbv_result = rbv.compile(problem)
 
-        if self._save_pddl:
+        if self._save_pddl_prefix is not None:
             w = PDDLWriter(rbv_result.problem)
-            w.write_domain(rbv.name + "__domain.pddl")
-            w.write_problem(rbv.name + "__problem.pddl")            
+            w.write_domain(unified_planning.social_law.name_separator.join([self._save_pddl_prefix, rbv.name, "domain.pddl"]))
+            w.write_problem(unified_planning.social_law.name_separator.join([self._save_pddl_prefix, rbv.name, "problem.pddl"]))            
         
         with OneshotPlanner(name=self._planner_name, problem_kind=rbv_result.problem.kind) as planner:
-            result = planner.solve(rbv_result.problem)
+            result = planner.solve(rbv_result.problem)            
             if result.status in unified_planning.engines.results.POSITIVE_OUTCOMES:                
                 for action_occurence in result.plan.actions:
-                    parts = action_occurence.action.name.split("_")
+                    parts = action_occurence.action.name.split(unified_planning.social_law.name_separator)
                     if parts[0][0] == "f":
                         status = SocialLawRobustnessStatus.NON_ROBUST_MULTI_AGENT_FAIL
                         break
@@ -221,35 +200,30 @@ class SocialLawRobustnessChecker(engines.engine.Engine, mixins.OneshotPlannerMix
 
         mac = MultiAgentProblemCentralizer()
         cresult = mac.compile(problem)        
-        simulator = SequentialSimulator(cresult.problem)
-        current_state: "COWState" = UPCOWState(cresult.problem.initial_values)
+        simulator = UPSequentialSimulator(cresult.problem)
+        current_state = simulator.get_initial_state()
 
         plan = SequentialPlan([])
 
         active_agents = problem.agents.copy()
         active_agents_next = []
                 
+        #TODO: look at plan validator again  
         while len(active_agents) > 0:
             action_performed = False
             for agent in active_agents:
                 if current_step[agent] < len(plans[agent].actions):
                     active_agents_next.append(agent)
                     ai = plans[agent].actions[current_step[agent]]
-                    action = cresult.problem.action(agent.name + "__" + ai.action.name)
+                    action = cresult.problem.action(unified_planning.social_law.name_separator.join([agent.name, ai.action.name]))
                     assert isinstance(action, unified_planning.model.InstantaneousAction)
 
-                    applicable = True
-                    events = simulator.get_events(action, ai.actual_parameters)
-                    for event in events:
-                        if not simulator.is_applicable(event, current_state):
-                            applicable = False
-                            break
+                    applicable = simulator.is_applicable(current_state, action, ai.actual_parameters)
                     
                     if applicable:
                         plan.actions.append(ActionInstance(ai.action, ai.actual_parameters, agent))
                         action_performed = True
-                        for event in events:                
-                            current_state = simulator.apply_unsafe(event, current_state)
+                        current_state = simulator.apply(current_state, action, ai.actual_parameters)
                         current_step[agent] = current_step[agent] + 1
             if not action_performed and len(active_agents_next) > 0:
                 # deadlock occurred

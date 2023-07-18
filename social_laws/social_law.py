@@ -21,7 +21,7 @@ from unified_planning.model import Parameter, Fluent, InstantaneousAction, probl
 from unified_planning.shortcuts import *
 from unified_planning.exceptions import UPProblemDefinitionError
 from unified_planning.model import Problem, InstantaneousAction, DurativeAction, Action
-from typing import Type, List, Dict, Callable, OrderedDict
+from typing import Type, List, Dict, Callable, OrderedDict, Tuple
 from enum import Enum, auto
 from unified_planning.io import PDDLWriter, PDDLReader
 from unified_planning.engines import Credits
@@ -34,7 +34,6 @@ from unified_planning.engines.meta_engine import MetaEngine
 import unified_planning.engines.mixins as mixins
 from unified_planning.engines.mixins.oneshot_planner import OptimalityGuarantee
 from unified_planning.engines.results import *
-from unified_planning.engines.sequential_simulator import SequentialSimulator
 from social_laws.ma_centralizer import MultiAgentProblemCentralizer
 from functools import partial
 from unified_planning.engines.compilers.utils import replace_action
@@ -132,7 +131,7 @@ class SocialLaw(engines.engine.Engine, CompilerMixin):
         supported_kind.set_fluents_type("OBJECT_FLUENTS")
         supported_kind.set_conditions_kind("NEGATIVE_CONDITIONS")
         supported_kind.set_conditions_kind("DISJUNCTIVE_CONDITIONS")
-        supported_kind.set_conditions_kind("EQUALITY")
+        supported_kind.set_conditions_kind("EQUALITIES")
         supported_kind.set_conditions_kind("EXISTENTIAL_CONDITIONS")
         supported_kind.set_conditions_kind("UNIVERSAL_CONDITIONS")
         supported_kind.set_effects_kind("CONDITIONAL_EFFECTS")
@@ -141,7 +140,7 @@ class SocialLaw(engines.engine.Engine, CompilerMixin):
         supported_kind.set_time("CONTINUOUS_TIME")
         supported_kind.set_time("DISCRETE_TIME")
         supported_kind.set_time("INTERMEDIATE_CONDITIONS_AND_EFFECTS")
-        supported_kind.set_time("TIMED_EFFECT")
+        supported_kind.set_time("TIMED_EFFECTS")
         supported_kind.set_time("TIMED_GOALS")
         supported_kind.set_time("DURATION_INEQUALITIES")
         supported_kind.set_simulated_entities("SIMULATED_EFFECTS")

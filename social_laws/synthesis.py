@@ -36,10 +36,8 @@ from unified_planning.engines.meta_engine import MetaEngine
 import unified_planning.engines.mixins as mixins
 from unified_planning.engines.mixins.oneshot_planner import OptimalityGuarantee
 from unified_planning.engines.results import *
-from unified_planning.engines.sequential_simulator import SequentialSimulator
-from social_laws.multi_agent.ma_centralizer import MultiAgentProblemCentralizer
+from social_laws.ma_centralizer import MultiAgentProblemCentralizer
 from functools import partial
-from unified_planning.engines.compilers.utils import replace_action
 import queue
 from dataclasses import dataclass, field
 from typing import Any
@@ -107,7 +105,7 @@ class StatisticsHeuristic(Heuristic):
             before_fail = True
             for i, ai in enumerate(robustness_result.counter_example_orig_actions.actions):
                 compiled_action_instance = robustness_result.counter_example.actions[i]
-                parts = compiled_action_instance.action.name.split("_")
+                parts = compiled_action_instance.action.name.split(unified_planning.social_law.name_separator)
                 agent_name = parts[1]                                                    
                 if parts[0][0] in ["w","f"]:
                     before_fail = False
@@ -139,7 +137,7 @@ class EarlyPOHeuristic(Heuristic):
         if robustness_result.counter_example is not None:            
             for i, ai in enumerate(robustness_result.counter_example_orig_actions.actions):
                 compiled_action_instance = robustness_result.counter_example.actions[i]
-                parts = compiled_action_instance.action.name.split("_")
+                parts = compiled_action_instance.action.name.split(unified_planning.social_law.name_separator)
                 agent_name = parts[1]                                                    
                 args_as_str = tuple(map(str, ai.actual_parameters))
                 if parts[0][0] in ["w","f"]:
@@ -237,7 +235,7 @@ class SocialLawGenerator:
         self.expanded = 0
 
     def generate_successors(self, current_sl : SocialLaw, action_index_in_plan : int, original_action_instance : ActionInstance, compiled_action_instance : ActionInstance):
-        parts = compiled_action_instance.action.name.split("_")
+        parts = compiled_action_instance.action.name.split(unified_planning.social_law.name_separator)
         agent_name = parts[1]
         action_name = original_action_instance.action.name
 

@@ -35,6 +35,8 @@ from typing import List, Dict
 from unified_planning.exceptions import UPUsageError
 import unified_planning.model.walkers as walkers
 from unified_planning.model.walkers.identitydag import IdentityDagWalker
+from unified_planning.environment import get_environment
+import unified_planning.model.problem_kind
 import random
 
 credits = Credits('Single Agent to Multi Agent Converter',
@@ -95,35 +97,13 @@ class SingleAgentToMultiAgentConverter(engines.engine.Engine, CompilerMixin):
         return "samac"
 
     @staticmethod
-    def supported_kind() -> ProblemKind:
-        supported_kind = ProblemKind()
-        supported_kind.set_problem_class("ACTION_BASED")
-        supported_kind.set_typing("FLAT_TYPING")
-        supported_kind.set_typing("HIERARCHICAL_TYPING")
-        supported_kind.set_numbers("CONTINUOUS_NUMBERS")
-        supported_kind.set_numbers("DISCRETE_NUMBERS")
-        supported_kind.set_problem_type("SIMPLE_NUMERIC_PLANNING")
-        supported_kind.set_problem_type("GENERAL_NUMERIC_PLANNING")
-        supported_kind.set_fluents_type("NUMERIC_FLUENTS")
-        supported_kind.set_fluents_type("OBJECT_FLUENTS")
-        supported_kind.set_conditions_kind("NEGATIVE_CONDITIONS")
-        supported_kind.set_conditions_kind("DISJUNCTIVE_CONDITIONS")
-        supported_kind.set_conditions_kind("EQUALITY")
-        supported_kind.set_conditions_kind("EXISTENTIAL_CONDITIONS")
-        supported_kind.set_conditions_kind("UNIVERSAL_CONDITIONS")
-        supported_kind.set_effects_kind("CONDITIONAL_EFFECTS")
-        supported_kind.set_effects_kind("INCREASE_EFFECTS")
-        supported_kind.set_effects_kind("DECREASE_EFFECTS")
-        supported_kind.set_time("CONTINUOUS_TIME")
-        supported_kind.set_time("DISCRETE_TIME")
-        supported_kind.set_time("INTERMEDIATE_CONDITIONS_AND_EFFECTS")
-        supported_kind.set_time("TIMED_EFFECT")
-        supported_kind.set_time("TIMED_GOALS")
-        supported_kind.set_time("DURATION_INEQUALITIES")
-        supported_kind.set_simulated_entities("SIMULATED_EFFECTS")
-        supported_kind.set_quality_metrics("PLAN_LENGTH")
-        supported_kind.set_quality_metrics("ACTIONS_COST")
-        supported_kind.set_quality_metrics("FINAL_VALUE")
+    def supported_kind() -> ProblemKind:        
+        supported_kind = unified_planning.model.problem_kind.classical_kind.union(
+            unified_planning.model.problem_kind.actions_cost_kind).union(
+            unified_planning.model.problem_kind.temporal_kind).union(
+            unified_planning.model.problem_kind.quality_metrics_kind).union(
+            unified_planning.model.problem_kind.hierarchical_kind)
+
         return supported_kind
 
     @staticmethod
@@ -156,7 +136,9 @@ class SingleAgentToMultiAgentConverter(engines.engine.Engine, CompilerMixin):
                 break
         if agent is None:
             agent = random.choice(list(self.agent_map.values()))
-        agent.add_goal(goal)
+        #TODO: add back
+        # Commented out because this function is not available
+        #agent.add_goal(goal)
         
 
     def _compile(self, problem: "up.model.AbstractProblem", compilation_kind: "up.engines.CompilationKind") -> CompilerResult:
@@ -202,7 +184,7 @@ class SingleAgentToMultiAgentConverter(engines.engine.Engine, CompilerMixin):
             
             for agent_obj in problem.objects(param.type):
                 agent = new_problem.agent(self.agent_name(agent_obj))
-                pg = PartialGrounder(new_problem.env)
+                pg = PartialGrounder(new_problem.environment)
 
                 if isinstance(action, InstantaneousAction):                    
                     new_action = InstantaneousAction(action.name, _parameters=d)        
@@ -237,5 +219,5 @@ class SingleAgentToMultiAgentConverter(engines.engine.Engine, CompilerMixin):
 
 
 
-env = up.environment.get_env()
+env = get_environment()
 env.factory.add_engine('SingleAgentToMultiAgentConverter', __name__, 'SingleAgentToMultiAgentConverter')

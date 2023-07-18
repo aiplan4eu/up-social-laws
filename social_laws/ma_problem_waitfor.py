@@ -28,12 +28,12 @@ class MultiAgentProblemWithWaitfor(MultiAgentProblem):
     def __init__(
         self,        
         name: str = None,
-        env: "unified_planning.environment.Environment" = None,
+        environment: "unified_planning.environment.Environment" = None,
         *,
         initial_defaults: Dict["unified_planning.model.types.Type", "ConstantExpression"] = {},
         waitfor : WaitforSpecification = None
     ):
-        MultiAgentProblem.__init__(self, name=name, env=env, initial_defaults=initial_defaults)
+        MultiAgentProblem.__init__(self, name=name, environment=environment, initial_defaults=initial_defaults)
         if waitfor is None:
             waitfor = WaitforSpecification()
         self._waitfor = waitfor

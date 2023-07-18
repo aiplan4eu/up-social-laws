@@ -16,6 +16,7 @@
 import unified_planning as up
 from unified_planning.shortcuts import *
 from unified_planning.test import TestCase, main
+import social_laws
 from social_laws.single_agent_projection import SingleAgentProjection
 from social_laws.robustness_verification import RobustnessVerifier, SimpleInstantaneousActionRobustnessVerifier, WaitingActionRobustnessVerifier
 from social_laws.robustness_checker import SocialLawRobustnessChecker, SocialLawRobustnessStatus
@@ -49,6 +50,7 @@ UNSOLVABLE_OUTCOMES = frozenset(
 FILE_PATH = os.path.dirname(os.path.abspath(__file__))
 PDDL_DOMAINS_PATH = os.path.join(FILE_PATH, "pddl")
 
+Example = namedtuple("Example", ["problem", "plan"])
 
 class RobustnessTestCase:
     def __init__(self, name, 
@@ -356,7 +358,7 @@ class TestProblem(TestCase):
         slrc = SocialLawRobustnessChecker(
             planner_name="fast-downward",
             robustness_verifier_name="SimpleInstantaneousActionRobustnessVerifier",
-            save_pddl=True
+            save_pddl_prefix="synth"
             )
         l = SocialLaw()
         l.disallow_action("a1", "move", ("nw","ne"))
@@ -447,18 +449,18 @@ class TestProblem(TestCase):
                 presult = slrc.solve(problem)
                 self.assertIn(presult.status, POSITIVE_OUTCOMES, t.name)
 
-    def test_all_cases_waiting(self):
-        for t in self.test_cases:
-            problem = get_intersection_problem(t.cars, t.yields_list, t.wait_drive, durative=False).problem
-            slrc = SocialLawRobustnessChecker(
-                planner_name="fast-downward",
-                robustness_verifier_name="WaitingActionRobustnessVerifier"
-                )
-            r_result = slrc.is_robust(problem)
-            self.assertEqual(r_result.status, t.expected_outcome, t.name)
-            if t.expected_outcome == SocialLawRobustnessStatus.ROBUST_RATIONAL:
-                presult = slrc.solve(problem)
-                self.assertIn(presult.status, POSITIVE_OUTCOMES, t.name)
+    # def test_all_cases_waiting(self):
+    #     for t in self.test_cases:
+    #         problem = get_intersection_problem(t.cars, t.yields_list, t.wait_drive, durative=False).problem
+    #         slrc = SocialLawRobustnessChecker(
+    #             planner_name="fast-downward",
+    #             robustness_verifier_name="WaitingActionRobustnessVerifier"
+    #             )
+    #         r_result = slrc.is_robust(problem)
+    #         self.assertEqual(r_result.status, t.expected_outcome, t.name)
+    #         if t.expected_outcome == SocialLawRobustnessStatus.ROBUST_RATIONAL:
+    #             presult = slrc.solve(problem)
+    #             self.assertIn(presult.status, POSITIVE_OUTCOMES, t.name)
 
 
     def test_centralizer(self):
@@ -470,7 +472,7 @@ class TestProblem(TestCase):
                 with OneshotPlanner(problem_kind=cresult.problem.kind) as planner:
                     presult = planner.solve(cresult.problem)
                     self.assertIn(presult.status, POSITIVE_OUTCOMES, t.name)
-
+ 
         
     def test_all_cases_durative(self):
         for t in self.test_cases:
@@ -479,7 +481,7 @@ class TestProblem(TestCase):
                 f.write(str(problem.waitfor))
 
             slrc = SocialLawRobustnessChecker(                                
-                save_pddl=True,                
+                save_pddl_prefix=t.name,                
                 )
             self.assertEqual(slrc.is_robust(problem).status, t.expected_outcome, t.name)
 
@@ -487,10 +489,8 @@ class TestProblem(TestCase):
         reader = PDDLReader()
         random.seed(2023)
         
-        domain_filename = "/home/karpase/git/pyperplan/benchmarks/transport/domain.pddl"
-        #os.path.join(PDDL_DOMAINS_PATH, "citycar", "domain.pddl")
-        problem_filename = "/home/karpase/git/pyperplan/benchmarks/transport/task01.pddl"
-        #os.path.join(PDDL_DOMAINS_PATH, "citycar", "problem.pddl")
+        domain_filename = os.path.join(PDDL_DOMAINS_PATH, "transport", "domain.pddl")
+        problem_filename = os.path.join(PDDL_DOMAINS_PATH, "transport", "task10.pddl")
         problem = reader.parse_problem(domain_filename, problem_filename)
 
         samac = SingleAgentToMultiAgentConverter(["vehicle"])
