@@ -199,7 +199,7 @@ class RobustnessVerifier(engines.engine.Engine, CompilerMixin):
         """ Returns the individual goal of the given agent"""        
         l = []
         for goal in problem.goals:
-            if goal.is_dot() and goal.agent == agent.name:
+            if goal.is_dot() and goal.agent() == agent.name:
                 l.append(goal)
         return l
 
