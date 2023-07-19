@@ -37,12 +37,12 @@ from unified_planning.engines.meta_engine import MetaEngine
 import unified_planning.engines.mixins as mixins
 from unified_planning.engines.mixins.oneshot_planner import OptimalityGuarantee
 from unified_planning.engines.results import *
-from unified_planning.engines.sequential_simulator import UPSequentialSimulator
 from social_laws.ma_centralizer import MultiAgentProblemCentralizer
 from functools import partial
 from unified_planning.engines.compilers.utils import replace_action
 import unified_planning.model.problem_kind
 import social_laws
+from unified_planning.shortcuts import *
 
 
 credits = Credits('Social Law Robustness Checker',
@@ -200,15 +200,14 @@ class SocialLawRobustnessChecker(engines.engine.Engine, mixins.OneshotPlannerMix
 
         mac = MultiAgentProblemCentralizer()
         cresult = mac.compile(problem)        
-        simulator = UPSequentialSimulator(cresult.problem)
+        simulator = SequentialSimulator(cresult.problem)
         current_state = simulator.get_initial_state()
 
         plan = SequentialPlan([])
 
         active_agents = problem.agents.copy()
         active_agents_next = []
-                
-        #TODO: look at plan validator again  
+                        
         while len(active_agents) > 0:
             action_performed = False
             for agent in active_agents:
@@ -232,9 +231,8 @@ class SocialLawRobustnessChecker(engines.engine.Engine, mixins.OneshotPlannerMix
                                             engine_name = self.name)
             active_agents = active_agents_next.copy()
             active_agents_next = []
-
-        unsatisfied_goals = simulator.get_unsatisfied_goals(current_state)
-        if len(unsatisfied_goals) == 0:            
+        
+        if simulator.is_goal(current_state):
             return unified_planning.engines.results.PlanGenerationResult(
                 unified_planning.engines.results.PlanGenerationResultStatus.SOLVED_SATISFICING,
                 plan=plan,

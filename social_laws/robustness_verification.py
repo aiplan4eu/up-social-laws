@@ -196,8 +196,7 @@ class RobustnessVerifier(engines.engine.Engine, CompilerMixin):
         return Object(agent.name, self.agent_type)
 
     def get_agent_goal(self, problem : MultiAgentProblem, agent : Agent):
-        """ Returns the individual goal of the given agent"""
-        #TODO: update when new API is available
+        """ Returns the individual goal of the given agent"""        
         l = []
         for goal in problem.goals:
             if goal.is_dot() and goal.agent == agent.name:
