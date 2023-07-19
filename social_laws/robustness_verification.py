@@ -598,7 +598,7 @@ class WaitingActionRobustnessVerifier(InstantaneousActionRobustnessVerifier):
 class DurativeActionRobustnessVerifier(RobustnessVerifier):
     '''Robustness verifier class for durative actions:
     this class requires a (multi agent) problem, and creates a temporal planning problem which is unsolvable iff the multi agent problem is not robust.'''
-    def __init__(self, replace_inv_count_with_bool = True):
+    def __init__(self, replace_inv_count_with_bool = False):
         RobustnessVerifier.__init__(self)
         self.replace_inv_count_with_bool = replace_inv_count_with_bool
     
