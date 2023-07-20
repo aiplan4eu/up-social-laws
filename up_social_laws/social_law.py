@@ -16,7 +16,7 @@
 
 from collections import defaultdict
 import unified_planning as up
-from social_laws.ma_problem_waitfor import MultiAgentProblemWithWaitfor
+from up_social_laws.ma_problem_waitfor import MultiAgentProblemWithWaitfor
 from unified_planning.model import Parameter, Fluent, InstantaneousAction, problem_kind
 from unified_planning.shortcuts import *
 from unified_planning.exceptions import UPProblemDefinitionError
@@ -34,7 +34,7 @@ from unified_planning.engines.meta_engine import MetaEngine
 import unified_planning.engines.mixins as mixins
 from unified_planning.engines.mixins.oneshot_planner import OptimalityGuarantee
 from unified_planning.engines.results import *
-from social_laws.ma_centralizer import MultiAgentProblemCentralizer
+from up_social_laws.ma_centralizer import MultiAgentProblemCentralizer
 from functools import partial
 from unified_planning.engines.compilers.utils import replace_action
 

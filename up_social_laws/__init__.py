@@ -17,4 +17,4 @@ from unified_planning.model.multi_agent import *
 # This is a hack, since getting the (agent, original action) from the solution of the robustness verification compilation is difficult
 name_separator = "__"
 
-__version__="0.0.2"
+__version__="0.0.3"
