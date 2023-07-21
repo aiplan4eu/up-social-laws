@@ -28,6 +28,7 @@ import unified_planning as up
 from unified_planning.engines import Credits
 from unified_planning.environment import get_environment
 import unified_planning.model.problem_kind
+import up_social_laws
 
 
 credits = Credits('Single Agent Projection',

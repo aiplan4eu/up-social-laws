@@ -16,7 +16,7 @@
 
 import unified_planning.environment
 from unified_planning.model.expression import ConstantExpression
-from social_laws.waitfor_specification import WaitforSpecification
+from up_social_laws.waitfor_specification import WaitforSpecification
 from unified_planning.model.multi_agent.ma_problem import MultiAgentProblem
 from unified_planning.model.multi_agent.agent import Agent
 from typing import Dict

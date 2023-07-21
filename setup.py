@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 from setuptools import setup # type: ignore
-import social_laws
+import up_social_laws
 
 
 long_description=\
@@ -10,16 +10,21 @@ long_description=\
     SOCIAL_LAWS
  ============================================================
 
-    social_laws is a package that allows for various compilations and checks related to social law verification and synthesis.
+    up_social_laws is a package that allows for various compilations and checks related to social law verification and synthesis.
 '''
 
-setup(name='social_laws',
-      version=social_laws.__version__,
-      description='social_laws',
+setup(name='up_social_laws',
+      version=up_social_laws.__version__,
+      description='Unified Planning Integration of Social Laws',
       author='Technion Cognitive Robotics Lab',
       author_email='karpase@technion.ac.il',
       url='https://github.com/aiplan4eu/up-social-laws',
-      packages=['social_laws'],
+      classifiers=['Development Status :: 4 - Beta',
+               'License :: OSI Approved :: Apache Software License :: 2.0',
+               'Programming Language :: Python :: 3',
+               'Topic :: Scientific/Engineering :: Artificial Intelligence'
+               ],
+      packages=['up_social_laws'],
       install_requires=[],
       python_requires='>=3.7',
       license='APACHE'

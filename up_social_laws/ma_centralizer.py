@@ -25,7 +25,7 @@ from typing import List, Dict, Union, Optional
 from unified_planning.engines.compilers.utils import replace_action, get_fresh_name
 from functools import partial
 import unified_planning as up
-from social_laws.robustness_verification import FluentMap, FluentMapSubstituter
+from up_social_laws.robustness_verification import FluentMap, FluentMapSubstituter
 from unified_planning.engines import Credits
 from unified_planning.model.fnode import FNode
 from unified_planning.model.operators import OperatorKind

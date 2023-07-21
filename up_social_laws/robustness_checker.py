@@ -16,10 +16,10 @@
 
 from collections import defaultdict
 import unified_planning as up
-from social_laws.single_agent_projection import SingleAgentProjection
-from social_laws.robustness_verification import SimpleInstantaneousActionRobustnessVerifier
-from social_laws.waitfor_specification import WaitforSpecification
-from social_laws.ma_problem_waitfor import MultiAgentProblemWithWaitfor
+from up_social_laws.single_agent_projection import SingleAgentProjection
+from up_social_laws.robustness_verification import SimpleInstantaneousActionRobustnessVerifier
+from up_social_laws.waitfor_specification import WaitforSpecification
+from up_social_laws.ma_problem_waitfor import MultiAgentProblemWithWaitfor
 from unified_planning.model import Parameter, Fluent, InstantaneousAction, problem_kind
 from unified_planning.shortcuts import *
 from unified_planning.exceptions import UPProblemDefinitionError
@@ -37,11 +37,11 @@ from unified_planning.engines.meta_engine import MetaEngine
 import unified_planning.engines.mixins as mixins
 from unified_planning.engines.mixins.oneshot_planner import OptimalityGuarantee
 from unified_planning.engines.results import *
-from social_laws.ma_centralizer import MultiAgentProblemCentralizer
+from up_social_laws.ma_centralizer import MultiAgentProblemCentralizer
 from functools import partial
 from unified_planning.engines.compilers.utils import replace_action
 import unified_planning.model.problem_kind
-import social_laws
+import up_social_laws
 from unified_planning.shortcuts import *
 
 
@@ -123,8 +123,8 @@ class SocialLawRobustnessChecker(engines.engine.Engine, mixins.OneshotPlannerMix
 
             if self._save_pddl_prefix is not None:
                 w = PDDLWriter(result.problem)
-                w.write_domain(social_laws.name_separator.join([self._save_pddl_prefix, "sap",  agent.name,  "domain.pddl"]))
-                w.write_problem(social_laws.name_separator.join([self._save_pddl_prefix, "sap",  agent.name,  "problem.pddl"]))
+                w.write_domain(up_social_laws.name_separator.join([self._save_pddl_prefix, "sap",  agent.name,  "domain.pddl"]))
+                w.write_problem(up_social_laws.name_separator.join([self._save_pddl_prefix, "sap",  agent.name,  "problem.pddl"]))
 
             with OneshotPlanner(name=self._planner_name, problem_kind=result.problem.kind) as planner:
                 presult = planner.solve(result.problem)
@@ -141,14 +141,14 @@ class SocialLawRobustnessChecker(engines.engine.Engine, mixins.OneshotPlannerMix
 
         if self._save_pddl_prefix is not None:
             w = PDDLWriter(rbv_result.problem)
-            w.write_domain(social_laws.name_separator.join([self._save_pddl_prefix, rbv.name, "domain.pddl"]))
-            w.write_problem(social_laws.name_separator.join([self._save_pddl_prefix, rbv.name, "problem.pddl"]))            
+            w.write_domain(up_social_laws.name_separator.join([self._save_pddl_prefix, rbv.name, "domain.pddl"]))
+            w.write_problem(up_social_laws.name_separator.join([self._save_pddl_prefix, rbv.name, "problem.pddl"]))            
         
         with OneshotPlanner(name=self._planner_name, problem_kind=rbv_result.problem.kind) as planner:
             result = planner.solve(rbv_result.problem)            
             if result.status in unified_planning.engines.results.POSITIVE_OUTCOMES:                
                 for action_occurence in result.plan.actions:
-                    parts = action_occurence.action.name.split(social_laws.name_separator)
+                    parts = action_occurence.action.name.split(up_social_laws.name_separator)
                     if parts[0][0] == "f":
                         status = SocialLawRobustnessStatus.NON_ROBUST_MULTI_AGENT_FAIL
                         break
@@ -214,7 +214,7 @@ class SocialLawRobustnessChecker(engines.engine.Engine, mixins.OneshotPlannerMix
                 if current_step[agent] < len(plans[agent].actions):
                     active_agents_next.append(agent)
                     ai = plans[agent].actions[current_step[agent]]
-                    action = cresult.problem.action(social_laws.name_separator.join([agent.name, ai.action.name]))
+                    action = cresult.problem.action(up_social_laws.name_separator.join([agent.name, ai.action.name]))
                     assert isinstance(action, unified_planning.model.InstantaneousAction)
 
                     applicable = simulator.is_applicable(current_state, action, ai.actual_parameters)
