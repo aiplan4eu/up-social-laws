@@ -21,7 +21,7 @@ setup(name='up_social_laws',
       author_email='karpase@technion.ac.il',
       url='https://github.com/aiplan4eu/up-social-laws',
       classifiers=['Development Status :: 4 - Beta',
-               'License :: OSI Approved :: Apache Software License :: 2.0',
+               'License :: OSI Approved :: Apache Software License',
                'Programming Language :: Python :: 3',
                'Topic :: Scientific/Engineering :: Artificial Intelligence'
                ],
