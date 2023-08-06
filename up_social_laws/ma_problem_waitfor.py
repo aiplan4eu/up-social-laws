@@ -58,11 +58,17 @@ class MultiAgentProblemWithWaitfor(MultiAgentProblem):
         for f in self.ma_environment.fluents:
             new_p.ma_environment.add_fluent(f)
         for ag in self.agents:
-            new_ag = Agent(ag.name, self)
-            for f in ag.fluents:
-                new_ag.add_fluent(f)
-            for a in ag.actions:
-                new_ag.add_action(a.clone())
+            new_ag = ag.clone(self)
+            # Agent(ag.name, self)
+            # for f in ag.fluents:
+            #     new_ag.add_fluent(f)
+            # for a in ag.actions:
+            #     new_ag.add_action(a.clone())
+            # for g in ag.private_goals:
+            #     new_ag.add_private_goal(g)
+            # for g in ag.public_goals:
+            #     new_ag.add_public_goal(g)
+            new_p.add_agent(new_ag)
         new_p._user_types = self._user_types[:]
         new_p._user_types_hierarchy = self._user_types_hierarchy.copy()
         new_p._objects = self._objects[:]

@@ -201,6 +201,10 @@ class RobustnessVerifier(engines.engine.Engine, CompilerMixin):
         for goal in problem.goals:
             if goal.is_dot() and goal.agent() == agent.name:
                 l.append(goal)
+        for goal in agent.private_goals:
+            l.append(goal)
+        for goal in agent.public_goals:
+            l.append(goal)
         return l
 
     def get_action_preconditions(self, problem : MultiAgentProblemWithWaitfor, agent : Agent, action : Action, fail : bool, wait: bool) -> List[FNode]:

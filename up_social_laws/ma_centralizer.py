@@ -139,6 +139,12 @@ class MultiAgentProblemCentralizer(engines.engine.Engine, CompilerMixin):
             else:
                 new_problem.add_goal(fmap.get_environment_version(goal))
 
+        for agent in problem.agents:
+            for goal in agent.public_goals:
+                new_problem.add_goal(fmap.get_agent_version(agent, goal))
+            for goal in agent.private_goals:
+                new_problem.add_goal(fmap.get_agent_version(agent, goal))
+
         return CompilerResult(
             new_problem, partial(replace_action, map=new_to_old), self.name
         )

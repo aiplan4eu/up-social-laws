@@ -15,4 +15,4 @@
 # This is a hack, since getting the (agent, original action) from the solution of the robustness verification compilation is difficult
 name_separator = "__"
 
-__version__="0.0.6"
+__version__="0.1.0"

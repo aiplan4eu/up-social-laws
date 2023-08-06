@@ -135,6 +135,12 @@ class SingleAgentProjection(engines.engine.Engine, CompilerMixin):
             else:
                 new_problem.add_goal(goal)            
 
+        for goal in self.agent.public_goals:
+            new_problem.add_goal(goal)
+        for goal in self.agent.private_goals:
+            new_problem.add_goal(goal)
+
+
         return CompilerResult(
             new_problem, partial(replace_action, map=new_to_old), self.name
         )
