@@ -135,10 +135,8 @@ class SingleAgentToMultiAgentConverter(engines.engine.Engine, CompilerMixin):
                 agent = self.agent_map[arg.object()]
                 break
         if agent is None:
-            agent = random.choice(list(self.agent_map.values()))
-        #TODO: add back
-        # Commented out because this function is not available
-        #agent.add_goal(goal)
+            agent = random.choice(list(self.agent_map.values()))        
+        agent.add_public_goal(goal)
         
 
     def _compile(self, problem: "up.model.AbstractProblem", compilation_kind: "up.engines.CompilationKind") -> CompilerResult:

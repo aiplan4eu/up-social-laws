@@ -248,7 +248,8 @@ def get_intersection_problem(
 
             problem.set_initial_value(Dot(car, car.fluent("start")(slobj)), True)
             problem.set_initial_value(Dot(car, car.fluent("traveldirection")(dobj)), True)        
-            problem.add_goal(Dot(car, car.fluent("at")(globj)))
+            car.add_public_goal(car.fluent("at")(globj))
+            #problem.add_goal(Dot(car, car.fluent("at")(globj)))
 
             if len(yields_list) > 0:
                 yields = set()
@@ -351,8 +352,10 @@ class TestProblem(TestCase):
         problem.set_initial_value(free(nw), False)
         problem.set_initial_value(free(se), False)
 
-        problem.add_goal(Dot(agent1, at(sw)))
-        problem.add_goal(Dot(agent2, at(ne)))
+        agent1.add_public_goal(at(sw))
+        agent2.add_public_goal(at(ne))
+        # problem.add_goal(Dot(agent1, at(sw)))
+        # problem.add_goal(Dot(agent2, at(ne)))
 
 
         slrc = SocialLawRobustnessChecker(
@@ -481,7 +484,7 @@ class TestProblem(TestCase):
                 f.write(str(problem.waitfor))
 
             slrc = SocialLawRobustnessChecker(                                
-                save_pddl_prefix=t.name,                
+                save_pddl_prefix=t.name
                 )
             self.assertEqual(slrc.is_robust(problem).status, t.expected_outcome, t.name)
 
