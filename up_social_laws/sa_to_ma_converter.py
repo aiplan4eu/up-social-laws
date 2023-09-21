@@ -102,12 +102,16 @@ class SingleAgentToMultiAgentConverter(engines.engine.Engine, CompilerMixin):
             unified_planning.model.problem_kind.actions_cost_kind).union(
             unified_planning.model.problem_kind.temporal_kind).union(
             unified_planning.model.problem_kind.quality_metrics_kind).union(
-            unified_planning.model.problem_kind.hierarchical_kind)
+            unified_planning.model.problem_kind.hierarchical_kind).union(
+            unified_planning.model.problem_kind.general_numeric_kind).union(
+            unified_planning.model.problem_kind.simple_numeric_kind            
+            )
+        supported_kind.set_effects_kind("FLUENTS_IN_NUMERIC_ASSIGNMENTS")
 
         return supported_kind
 
     @staticmethod
-    def supports(problem_kind):
+    def supports(problem_kind):        
         return problem_kind <= SingleAgentToMultiAgentConverter.supported_kind()
 
     @staticmethod
@@ -161,6 +165,8 @@ class SingleAgentToMultiAgentConverter(engines.engine.Engine, CompilerMixin):
         fmap = FluentMap("c")
         for f in problem.fluents:
             new_problem.ma_environment.add_fluent(f)
+            if f in problem.fluents_defaults:  
+                new_problem.ma_environment.fluents_defaults[f] = problem.fluents_defaults[f]          
         
         eiv = problem.explicit_initial_values     
         for fluent in eiv:            
