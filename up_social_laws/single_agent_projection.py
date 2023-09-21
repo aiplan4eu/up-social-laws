@@ -61,7 +61,15 @@ class SingleAgentProjection(engines.engine.Engine, CompilerMixin):
 
     @staticmethod
     def supported_kind() -> ProblemKind:
-        supported_kind = unified_planning.model.problem_kind.multi_agent_kind.union(unified_planning.model.problem_kind.actions_cost_kind).union(unified_planning.model.problem_kind.temporal_kind)        
+        supported_kind = unified_planning.model.problem_kind.multi_agent_kind.union(
+            unified_planning.model.problem_kind.actions_cost_kind).union(
+                unified_planning.model.problem_kind.temporal_kind).union(
+            unified_planning.model.problem_kind.quality_metrics_kind).union(
+            unified_planning.model.problem_kind.hierarchical_kind).union(
+            unified_planning.model.problem_kind.general_numeric_kind).union(
+            unified_planning.model.problem_kind.simple_numeric_kind            
+            )
+        supported_kind.set_effects_kind("FLUENTS_IN_NUMERIC_ASSIGNMENTS")     
         return supported_kind
 
     @staticmethod
