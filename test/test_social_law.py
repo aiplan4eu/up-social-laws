@@ -358,8 +358,10 @@ class TestProblem(TestCase):
         # problem.add_goal(Dot(agent2, at(ne)))
 
 
+        fd_planner = OneshotPlanner(name="fast-downward")
+
         slrc = SocialLawRobustnessChecker(
-            planner_name="fast-downward",
+            planner=fd_planner,
             robustness_verifier_name="SimpleInstantaneousActionRobustnessVerifier",
             save_pddl_prefix="synth"
             )
@@ -393,8 +395,10 @@ class TestProblem(TestCase):
         
 
     def test_social_law(self):
+        fd_planner = OneshotPlanner(name="fast-downward")
+
         slrc = SocialLawRobustnessChecker(
-            planner_name="fast-downward",
+            planner=fd_planner,
             robustness_verifier_name="SimpleInstantaneousActionRobustnessVerifier"
             )
         p_4cars_crash = get_intersection_problem(wait_drive=False).problem
@@ -442,8 +446,9 @@ class TestProblem(TestCase):
     def test_all_cases(self):
         for t in self.test_cases:
             problem = get_intersection_problem(t.cars, t.yields_list, t.wait_drive, durative=False).problem
+            fd_planner = OneshotPlanner(name="fast-downward")
             slrc = SocialLawRobustnessChecker(
-                planner_name="fast-downward",
+                planner=fd_planner,
                 robustness_verifier_name="SimpleInstantaneousActionRobustnessVerifier"
                 )
             r_result = slrc.is_robust(problem)
