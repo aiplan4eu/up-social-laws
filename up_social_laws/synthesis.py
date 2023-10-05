@@ -59,11 +59,11 @@ class SocialLawGeneratorSearch(Enum):
     GBFS = auto()
 
 
-def get_gbfs_social_law_generator(planner_name=None):
+def get_gbfs_social_law_generator(planner=None):
     return SocialLawGenerator(SocialLawGeneratorSearch.GBFS, 
                             heuristic = StatisticsHeuristic(), 
                             preferred_operator_heuristics = [EarlyPOHeuristic(), PublicActionsPOHeuristic()],
-                            planner_name=planner_name)
+                            planner=planner)
 
 @dataclass(order=True)
 class SearchNode:
@@ -224,12 +224,12 @@ class SocialLawGenerator:
                     search : SocialLawGeneratorSearch = SocialLawGeneratorSearch.BFS, 
                     heuristic : Optional[Heuristic] = None,
                     preferred_operator_heuristics : List[Heuristic] = [],
-                    planner_name=None
+                    planner=None
                     ):
         self.search = search
         self.heuristic = heuristic
         self.po = preferred_operator_heuristics
-        self.planner_name = planner_name
+        self.planner = planner
         self.all_heuristics = set(preferred_operator_heuristics)
         if self.heuristic is not None:
             self.all_heuristics.add(self.heuristic)
@@ -254,7 +254,7 @@ class SocialLawGenerator:
 
 
     def generate_social_law(self, initial_problem : MultiAgentProblemWithWaitfor):
-        robustness_checker = SocialLawRobustnessChecker(planner_name=self.planner_name)        
+        robustness_checker = SocialLawRobustnessChecker(planner=self.planner)        
         self.init_counters()
 
         for h in self.all_heuristics:

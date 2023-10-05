@@ -35,6 +35,7 @@ from unified_planning.plans import Plan, SequentialPlan
 import unified_planning.engines.results 
 from unified_planning.engines.meta_engine import MetaEngine
 import unified_planning.engines.mixins as mixins
+from unified_planning.engines.mixins import OneshotPlannerMixin
 from unified_planning.engines.mixins.oneshot_planner import OptimalityGuarantee
 from unified_planning.engines.results import *
 from up_social_laws.ma_centralizer import MultiAgentProblemCentralizer
@@ -79,17 +80,17 @@ class SocialLawRobustnessChecker(engines.engine.Engine, mixins.OneshotPlannerMix
     '''social law robustness checker class:
     This class checks if a given MultiAgentProblemWithWaitfor is robust or not.
     '''
-    def __init__(self, planner_name : str = None, robustness_verifier_name : str = None, save_pddl_prefix = None):
+    def __init__(self, planner : OneshotPlannerMixin = None, robustness_verifier_name : str = None, save_pddl_prefix = None):
         engines.engine.Engine.__init__(self)
         mixins.OneshotPlannerMixin.__init__(self)
-        self._planner_name = planner_name
+        self._planner = planner
         self._robustness_verifier_name = robustness_verifier_name
         self._save_pddl_prefix = save_pddl_prefix
         
 
     @property
     def name(self) -> str:
-        return f"SocialLawRobustnessChecker[{self._planner_name}]"
+        return f"SocialLawRobustnessChecker"
 
     @staticmethod
     def get_credits(**kwargs) -> Optional['Credits']:
@@ -126,10 +127,13 @@ class SocialLawRobustnessChecker(engines.engine.Engine, mixins.OneshotPlannerMix
                 w.write_domain(up_social_laws.name_separator.join([self._save_pddl_prefix, "sap",  agent.name,  "domain.pddl"]))
                 w.write_problem(up_social_laws.name_separator.join([self._save_pddl_prefix, "sap",  agent.name,  "problem.pddl"]))
 
-            with OneshotPlanner(name=self._planner_name, problem_kind=result.problem.kind) as planner:
-                presult = planner.solve(result.problem)
-                if presult.status not in unified_planning.engines.results.POSITIVE_OUTCOMES:                    
-                    return False
+            if self._planner is not None:
+                planner = self._planner
+            else:
+                planner = OneshotPlanner(problem_kind=result.problem.kind)
+            presult = planner.solve(result.problem)
+            if presult.status not in unified_planning.engines.results.POSITIVE_OUTCOMES:                    
+                return False
         return True
 
     def multi_agent_robustness_counterexample(self, problem : MultiAgentProblemWithWaitfor) -> SocialLawRobustnessResult:
@@ -144,25 +148,29 @@ class SocialLawRobustnessChecker(engines.engine.Engine, mixins.OneshotPlannerMix
             w.write_domain(up_social_laws.name_separator.join([self._save_pddl_prefix, rbv.name, "domain.pddl"]))
             w.write_problem(up_social_laws.name_separator.join([self._save_pddl_prefix, rbv.name, "problem.pddl"]))            
         
-        with OneshotPlanner(name=self._planner_name, problem_kind=rbv_result.problem.kind) as planner:
-            result = planner.solve(rbv_result.problem)            
-            if result.status in unified_planning.engines.results.POSITIVE_OUTCOMES:                
-                for action_occurence in result.plan.actions:
-                    parts = action_occurence.action.name.split(up_social_laws.name_separator)
-                    if parts[0][0] == "f":
-                        status = SocialLawRobustnessStatus.NON_ROBUST_MULTI_AGENT_FAIL
-                        break
-                    elif parts[0][0] == "w":
-                        status = SocialLawRobustnessStatus.NON_ROBUST_MULTI_AGENT_DEADLOCK            
-                        break
+        if self._planner is not None:
+            planner = self._planner
+        else:
+            planner = OneshotPlanner(problem_kind=rbv_result.problem.kind)
+        
+        result = planner.solve(rbv_result.problem)            
+        if result.status in unified_planning.engines.results.POSITIVE_OUTCOMES:                
+            for action_occurence in result.plan.actions:
+                parts = action_occurence.action.name.split(up_social_laws.name_separator)
+                if parts[0][0] == "f":
+                    status = SocialLawRobustnessStatus.NON_ROBUST_MULTI_AGENT_FAIL
+                    break
+                elif parts[0][0] == "w":
+                    status = SocialLawRobustnessStatus.NON_ROBUST_MULTI_AGENT_DEADLOCK            
+                    break
 
-                orig_plan = result.plan.replace_action_instances(rbv_result.map_back_action_instance)
+            orig_plan = result.plan.replace_action_instances(rbv_result.map_back_action_instance)
 
-                return SocialLawRobustnessResult(status, result.plan, orig_plan)
-            elif result.status in [PlanGenerationResultStatus.UNSOLVABLE_PROVEN, PlanGenerationResultStatus.UNSOLVABLE_INCOMPLETELY]:
-                return SocialLawRobustnessResult(SocialLawRobustnessStatus.ROBUST_RATIONAL, None, None)
-            else:
-                return SocialLawRobustnessResult(SocialLawRobustnessStatus.UNKNOWN, None, None)
+            return SocialLawRobustnessResult(status, result.plan, orig_plan)
+        elif result.status in [PlanGenerationResultStatus.UNSOLVABLE_PROVEN, PlanGenerationResultStatus.UNSOLVABLE_INCOMPLETELY]:
+            return SocialLawRobustnessResult(SocialLawRobustnessStatus.ROBUST_RATIONAL, None, None)
+        else:
+            return SocialLawRobustnessResult(SocialLawRobustnessStatus.UNKNOWN, None, None)
 
 
     def is_robust(self, problem : MultiAgentProblemWithWaitfor) -> SocialLawRobustnessResult:
@@ -188,15 +196,19 @@ class SocialLawRobustnessChecker(engines.engine.Engine, mixins.OneshotPlannerMix
             sap = SingleAgentProjection(agent)        
             result = sap.compile(problem)
 
-            with OneshotPlanner(name=self._planner_name, problem_kind=result.problem.kind) as planner:
-                presult = planner.solve(result.problem, timeout=timeout, output_stream=output_stream)
-                if presult.status not in unified_planning.engines.results.POSITIVE_OUTCOMES:
-                    return unified_planning.engines.results.PlanGenerationResult(
-                        unified_planning.engines.results.UNSOLVABLE_INCOMPLETELY,
-                        plan=None,
-                        engine_name = self.name)
-                plans[agent] = presult.plan
-                current_step[agent] = 0
+            if self._planner is not None:
+                planner = self._planner
+            else:
+                planner = OneshotPlanner(problem_kind=result.problem.kind)
+            
+            presult = planner.solve(result.problem, timeout=timeout, output_stream=output_stream)
+            if presult.status not in unified_planning.engines.results.POSITIVE_OUTCOMES:
+                return unified_planning.engines.results.PlanGenerationResult(
+                    unified_planning.engines.results.UNSOLVABLE_INCOMPLETELY,
+                    plan=None,
+                    engine_name = self.name)
+            plans[agent] = presult.plan
+            current_step[agent] = 0
 
         mac = MultiAgentProblemCentralizer()
         cresult = mac.compile(problem)        
