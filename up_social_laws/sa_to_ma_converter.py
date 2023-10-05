@@ -37,6 +37,7 @@ import unified_planning.model.walkers as walkers
 from unified_planning.model.walkers.identitydag import IdentityDagWalker
 from unified_planning.environment import get_environment
 import unified_planning.model.problem_kind
+from unified_planning.shortcuts import *
 import random
 
 credits = Credits('Single Agent to Multi Agent Converter',
@@ -77,24 +78,16 @@ class PartialGrounder(IdentityDagWalker):
         else:      
             return self.manager.ParameterExp(expression.parameter())
 
-
-
-class SingleAgentToMultiAgentConverter(engines.engine.Engine, CompilerMixin):
-    '''Single Agent to Multi Agent Converter class:
+class BaseSingleAgentToMultiAgentConverter(engines.engine.Engine, CompilerMixin):
+    '''Base Single Agent to Multi Agent Converter class:
     this class requires a single agent problem and generates a multi agent problem.'''
-    def __init__(self, agent_types : List[str]):
+    def __init__(self):
         engines.engine.Engine.__init__(self)
         CompilerMixin.__init__(self, CompilationKind.SA_MA_CONVERSION)                
-        self.agent_types = agent_types
-        self.agent_map = {}
         
     @staticmethod
     def get_credits(**kwargs) -> Optional['Credits']:
         return credits
-
-    @property
-    def name(self):
-        return "samac"
 
     @staticmethod
     def supported_kind() -> ProblemKind:        
@@ -127,10 +120,112 @@ class SingleAgentToMultiAgentConverter(engines.engine.Engine, CompilerMixin):
         new_kind.unset_problem_class("ACTION_BASED")
         return new_kind
 
+
+class DuplicationsSingleAgentToMultiAgentConverter(BaseSingleAgentToMultiAgentConverter):
+    '''Single Agent to Multi Agent Converter class:
+    this class requires a single agent problem and generates a multi agent problem by duplicating the problem for each agent (each agent has a single goal fast as its goal).'''
+    def __init__(self, duplicate_types):
+        BaseSingleAgentToMultiAgentConverter.__init__(self)        
+        self.duplicate_types = duplicate_types
+        
+    @property
+    def name(self):
+        return "dupsamac"
+    
+    def add_agent(self, name, goal, ma_problem):
+        agent = Agent(name, ma_problem)
+        agent.add_public_goal(goal)
+        ma_problem.add_agent(agent)
+        
+    def _compile(self, problem: "up.model.AbstractProblem", compilation_kind: "up.engines.CompilationKind") -> CompilerResult:
+        '''Creates a problem that is a multi-agent version of the original problem'''
+        assert isinstance(problem, Problem)
+
+        ma_problem = MultiAgentProblem()
+        new_to_old: Dict[Action, Action] = {}
+
+        owns_map = {}
+
+        for i, goal in enumerate(problem.goals):            
+            if goal.is_and():
+                for j, sg in enumerate(goal.args):
+                    self.add_agent("agent__" + str(i) + "__" + str(j), sg, ma_problem)
+            else:
+                self.add_agent("agent__" + str(i), goal, ma_problem)
+
+        for obj in problem.all_objects:
+            if obj.type in self.duplicate_types:
+                for agent in ma_problem.agents:
+                    ma_problem.add_object(agent.name + "__" + obj.name, obj.type)                    
+            else:
+                ma_problem.add_object(obj)
+
+        for utype in self.duplicate_types:
+            ltype = ma_problem.user_type(utype.name)
+            for agent in ma_problem.agents:                
+                owns = Fluent("owns__" + utype.name + "__" + agent.name, BoolType(), what=ltype)
+                owns_map[utype.name,agent.name] = owns
+                ma_problem.ma_environment.add_fluent(owns)
+                ma_problem.ma_environment.fluents_defaults[owns] = False                
+                for obj in problem.objects(utype):
+                    agent_obj = ma_problem.object(agent.name + "__" + obj.name)
+                    ma_problem.set_initial_value(owns(agent_obj), True)
+
+        for f in problem.fluents:
+            ma_problem.ma_environment.add_fluent(f)
+            if f in problem.fluents_defaults:  
+                ma_problem.ma_environment.fluents_defaults[f] = problem.fluents_defaults[f]          
+                
+        eiv = problem.explicit_initial_values     
+        for fluent in eiv:
+            F = fluent.fluent()
+            signature = F.signature
+            dup = False
+            for p in signature:
+                if p.type in self.duplicate_types:
+                    dup = True
+                    break
+            if dup:
+                for agent in ma_problem.agents:
+                    l = []
+                    for arg in fluent.args:                    
+                        agent_obj = ma_problem.object(agent.name + "__" + str(arg))
+                        l.append(agent_obj)
+                    gf = FluentExp(F, l)
+                    ma_problem.set_initial_value(gf, eiv[fluent])
+            else:
+                ma_problem.set_initial_value(fluent, eiv[fluent])
+
+        for action in problem.actions:    
+            for agent in ma_problem.agents:
+                ac = action.clone()
+                for p in ac.parameters:                
+                    otype = problem.user_type(p.type.name)
+                    if otype in self.duplicate_types:
+                        owns = owns_map[otype.name,agent.name]                        
+                        ac.add_precondition(owns(p))
+                agent.add_action(ac)        
+
+        return CompilerResult(
+            ma_problem, partial(replace_action, map=new_to_old), self.name
+        )
+
+
+
+class SingleAgentToMultiAgentConverter(BaseSingleAgentToMultiAgentConverter):
+    '''Single Agent to Multi Agent Converter class:
+    this class requires a single agent problem and generates a multi agent problem.'''
+    def __init__(self, agent_types : List[str]):
+        BaseSingleAgentToMultiAgentConverter.__init__(self)        
+        self.agent_types = agent_types
+        self.agent_map = {}
+        
+    @property
+    def name(self):
+        return "samac"
+
     def agent_name(self, obj : Object):
         return "agent__" + obj.name
-
-
     
     def assign_goal_to_agent(self, goal):        
         agent = None
@@ -225,3 +320,5 @@ class SingleAgentToMultiAgentConverter(engines.engine.Engine, CompilerMixin):
 
 env = get_environment()
 env.factory.add_engine('SingleAgentToMultiAgentConverter', __name__, 'SingleAgentToMultiAgentConverter')
+env.factory.add_engine('DuplicationsSingleAgentToMultiAgentConverter', __name__, 'DuplicationsSingleAgentToMultiAgentConverter')
+
